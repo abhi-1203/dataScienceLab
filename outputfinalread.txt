@@ -1,0 +1,33 @@
+abhijith@abhijith-GA-78LMT-S2:~/Desktop$ g++ ex.cpp `pkg-config --libs --cflags libusb-1.0`
+abhijith@abhijith-GA-78LMT-S2:~/Desktop$ ./a.out
+OUT flag 0000 IN flag 0080
+Shifted in 0001
+
+Attempted index 0
+VID: 1D6B. PID: 0001
+Sent getProtocol
+Pipe error
+
+Attempted index 1
+VID: 18D1. PID: 2D00
+Sent getProtocol
+Response 
+Version Code Device: 2
+Accessory Identification sent
+
+
+Android Found:
+Interface 0. altSetting 0. Num of endpoints: 2
+Endpoint type Bulk IN
+Address 0081
+Endpoint type Bulk OUT
+Address 0001
+Interface claimed, ready to transfer data
+Trying to receive from Device through: 0081
+Tried to receive: abhi//from phone
+received 4 bytes..
+Trying to write to 0081
+Bulk write error -7...
+Operation timed out
+
+Error in transferTest
