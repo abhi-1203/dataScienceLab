@@ -1,8 +1,8 @@
-
+#include "stdafx.h"
 #include <stdio.h>
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include <string.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <inttypes.h>
 #include <iostream>
 
@@ -79,7 +79,7 @@ static int androidIntroduction(libusb_device_handle *handle)
 		return -1;
 	fprintf(stdout, "Version Code Device: %d\n", devVersion);
 
-	usleep(1000);//sometimes hangs on the next transfer :(
+	Sleep(1000);//sometimes hangs on the next transfer :(
 
 	response = libusb_control_transfer(handle, 0x40, 52, 0, 0, (unsigned char*)manufacturer, strlen(manufacturer) + 1, 0);
 	if (response < 0)
@@ -90,37 +90,37 @@ static int androidIntroduction(libusb_device_handle *handle)
 	response = libusb_control_transfer(handle, 0x40, 52, 0, 1, (unsigned char*)modelName, strlen(modelName) + 1, 0);
 	if (response < 0)
 	{
-	fprintf(stdout, "sent 2\n");
+		fprintf(stdout, "sent 2\n");
 		error(response); return -1;
 	}
 	response = libusb_control_transfer(handle, 0x40, 52, 0, 2, (unsigned char*)description, strlen(description) + 1, 0);
 	if (response < 0)
 	{
-fprintf(stdout, "sent 3\n");
+		fprintf(stdout, "sent 3\n");
 		error(response); return -1;
 	}
 	response = libusb_control_transfer(handle, 0x40, 52, 0, 3, (unsigned char*)version, strlen(version) + 1, 0);
 	if (response < 0)
 	{
-fprintf(stdout, "sent 4\n");
+		fprintf(stdout, "sent 4\n");
 		error(response); return -1;
 	}
 	response = libusb_control_transfer(handle, 0x40, 52, 0, 4, (unsigned char*)uri, strlen(uri) + 1, 0);
 	if (response < 0)
 	{
-fprintf(stdout, "sent 5\n");
+		fprintf(stdout, "sent 5\n");
 		error(response); return -1;
 	}
 	response = libusb_control_transfer(handle, 0x40, 52, 0, 5, (unsigned char*)serialNumber, strlen(serialNumber) + 1, 0);
 	if (response < 0)
 	{
-fprintf(stdout, "sent 6\n");
+		fprintf(stdout, "sent 6\n");
 
 		error(response); return -1;
 	}
 
 	fprintf(stdout, "Accessory Identification sent\n");
-		
+
 	return 1;
 }
 
@@ -166,7 +166,7 @@ static libusb_device_handle* setupAccessory(libusb_device_handle *handle1)
 			fprintf(stdout, "Device is in accessory mode...\n");
 			break;
 		}
-		usleep(1000000);
+		Sleep(10000);
 	}
 
 	return androidHandle;
@@ -200,12 +200,13 @@ uint8_t findBulkOut(libusb_device *device)
 				case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
 					break;
 				case LIBUSB_TRANSFER_TYPE_BULK:
-					if ((address & LIBUSB_ENDPOINT_IN)) //LIBUSB_ENPOINT_OUT is simply 0000, can't AND that...
+					if (!(address & LIBUSB_ENDPOINT_IN)) //LIBUSB_ENPOINT_OUT is simply 0000, can't AND that...
 					{
 						return address;
 					}
-					if(!(address & LIBUSB_ENDPOINT_IN)){
-						return address;}
+					if ((address & LIBUSB_ENDPOINT_IN)){
+					return address;
+					}
 
 					break;
 				case LIBUSB_TRANSFER_TYPE_INTERRUPT:
@@ -225,13 +226,13 @@ void printEnds(libusb_device *device)
 	libusb_get_active_config_descriptor(device, &con_desc);
 	const libusb_interface *interfaceList = con_desc->interface;
 	uint16_t numInterface = con_desc->bNumInterfaces;
-	std::cout<<"\nNumber of interfaces: "<<numInterface<<"\n";
+	std::cout << "\nNumber of interfaces: " << numInterface << "\n";
 	for (int j = 0; j<numInterface; j++)
 	{
 		libusb_interface interface = interfaceList[j];
 		const libusb_interface_descriptor *intDescList = interface.altsetting;
 		int numAlt = interface.num_altsetting;
-		std::cout<<"\nNumber of altsetting: "<< numAlt<<"\n";
+		std::cout << "\nNumber of altsetting: " << numAlt << "\n";
 		for (int p = 0; p < numAlt; p++)
 		{
 			libusb_interface_descriptor intDesc = intDescList[p];
@@ -328,64 +329,65 @@ libusb_device_handle* getAndroidHandle()
 //Try to send data.
 static int transferTest(libusb_device_handle *handle)
 {
-	const static int PACKET_BULK_LEN = 64;
-	const static int TIMEOUT = 5000;
+	const static int PACKET_BULK_LEN = 128;
+	const static int TIMEOUT = 500;
 	int r, i;
-	int transferred=0;
-	usleep(100000); //1s
+	int transferred = 1;
+	int transferred1 = 0;
 
-	//libusb_set_configuration(handle, 0);
-	r = libusb_claim_interface(handle, INTERFACE);
-	if (r < 0)
-	{
-		error(r); return -1;
-	}
+	Sleep(1000); //1s
+
+	if(libusb_set_configuration(handle, 1) == 0)
+	r = libusb_claim_interface(handle,INTERFACE);
+	//if (r < 0)
+	//{
+	//	error(r); return -1;
+	//}
 	fprintf(stdout, "Interface claimed, ready to transfer data\n");
 	// TEST BULK IN/OUT
-	usleep(10000);// 0.1s
+	Sleep(1000);// 0.1s
 	uint8_t outAddress = findBulkOut(libusb_get_device(handle));
 	uint8_t inAddress = findBulkOut(libusb_get_device(handle));
 	fprintf(stdout, "Trying to receive from Device through: %04X\n", inAddress);
 	//std::cout<< LIBUSB_ENDPOINT_OUT;
 
-	char answer[4]={'1','1','2'};
-	char question[4]={};
+	char answer[4] = {'1'};
+	char question[4] = {};
 	//for (i = 0; i<128; i++) question[i] = i;
-	usleep(3000);
+	Sleep(1000);
 	// ***TIMES OUT HERE***
 	r = libusb_bulk_transfer(handle, inAddress, (unsigned char*)question, PACKET_BULK_LEN,
 		&transferred, TIMEOUT);
 	if (r < 0)
 	{
-		std::cout<< "\nTried to receive: "<<question<<"\n";
+		std::cout << "\nTried to receive: " << question << "\n";
 		fprintf(stderr, "Bulk receive error %d\n", r);
 		error(r);
 		fprintf(stderr, "Number of bytes received %d\n", transferred);
 		return r;
 	}
-	if(r==0){
-	std::cout<< "Tried to receive: "<<question<<"\n";
-	fprintf(stdout, "received %d bytes..", transferred);
+	if (r == 0){
+		std::cout << "Tried to receive: " << question << "\n";
+		fprintf(stdout, "received %d bytes..", transferred);
 	}
 
-	usleep(10000);// 0.1s
+	Sleep(1000);// 0.1s
 	fprintf(stdout, "\nTrying to write to %04X\n", outAddress);
-	r = libusb_bulk_transfer(handle, outAddress, (unsigned char*)answer,PACKET_BULK_LEN, &transferred, TIMEOUT);
+	r = libusb_bulk_transfer(handle, 0x0001, (unsigned char*)answer, PACKET_BULK_LEN, &transferred, TIMEOUT);
 	if (r < 0)
 	{
-	fprintf(stderr, "Bulk write error %d...\n", r);
-	error(r);
-	return r;
+		fprintf(stderr, "Bulk write error %d...\n", r);
+		error(r);
+		return r;
 	}
-	if(r==0){
-	fprintf(stdout, "...\nwrote %d bytes ", r);
+	if (r == 0){
+		fprintf(stdout, "...\nwrote %d bytes ", r);
 	}
-
 	if (transferred < PACKET_BULK_LEN)
 	{
-	fprintf(stderr, "Bulk transfer write (%d).\n", r);
-	error(r);
-	return -1;
+		fprintf(stderr, "Bulk transfer write (%d).\n", r);
+		error(r);
+		return -1;
 	}
 	//printf("Bulk Transfer Loop Test Result:\n");
 	//     for (i=0;i< PACKET_BULK_LEN;i++) printf("%i, %i,\n ",question[i],answer[i]);
@@ -423,3 +425,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "\nFinished\n");
 	return 0;
 }
+
+
+
+
